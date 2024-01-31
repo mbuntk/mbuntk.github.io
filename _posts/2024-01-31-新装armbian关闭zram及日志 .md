@@ -29,10 +29,10 @@ tags:
   5.禁用定时截断任务/etc/cron.d/armbian-truncate-logs,定时任务前加#注释
   
   6.禁用另一个任务，修改文件/etc/cron.daily/armbian-ram-logging如下，同样是加井号注释
-  
-       highlighter- gradle
-      /bin/sh
-  # /usr/lib/armbian/armbian-ramlog write >/dev/null 2>&1
+        /bin/sh
+		
+       # /usr/lib/armbian/armbian-ramlog write >/dev/null 2>&1
+	   
   
 重启即可，/var/log.hdd/为空了
 
