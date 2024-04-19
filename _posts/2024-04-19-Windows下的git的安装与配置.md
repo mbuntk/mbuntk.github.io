@@ -16,7 +16,7 @@ Windows下的git的安装与配置
 
 安装成功后，在任意地方右键，应该会看到这样子：
 
-![image](https://github.com/sundys/sundys.github.io/blob/master/img/git01.png)
+![img](/img/git01.png)
 
 3.打开https://github.com/ 网页注册一个属于自己github账号，教程例子：昵称test，邮箱test@qq.com
 
@@ -40,7 +40,7 @@ git config user.email “youremail@qq.com”
 
 查看是否已有密钥ls -al ~/.ssh存在则可忽略，不存在则可按下面的方式生成
 
-![image](https://github.com/sundys/sundys.github.io/blob/master/img/git02.png)
+![img](/img/git02.png)
 
 首先确保系统盘c盘下的用户目录你正在使用的电脑用户目录内有.ssh文件夹，没有则可在此鼠标右键git bash here输入：mkdir .ssh
 
