@@ -16,7 +16,7 @@ Windows下的git的安装与配置
 
 安装成功后，在任意地方右键，应该会看到这样子：
 
-![image](img/git01.png)
+![image](https://github.com/sundys/sundys.github.io/blob/master/img/git01.png)
 
 3.打开https://github.com/ 网页注册一个属于自己github账号，教程例子：昵称test，邮箱test@qq.com
 
@@ -26,18 +26,21 @@ Windows下的git的安装与配置
 
 git config --global user.name “yourname”
 
-git config --global user.email “youremail@qq.com” 有--global则表示全局配置
+git config --global user.email “youremail@qq.com” 
+
+有--global则表示全局配置
 
 在某个项目根路径下面设置单独的Email与姓名：
 
 git config user.name “yourname”
+
 git config user.email “youremail@qq.com”
 
 2.生成配置ssh密钥（在git bash命令行下）
 
 查看是否已有密钥ls -al ~/.ssh存在则可忽略，不存在则可按下面的方式生成
 
-![image](img/git02.png)
+![image](https://github.com/sundys/sundys.github.io/blob/master/img/git02.png)
 
 首先确保系统盘c盘下的用户目录你正在使用的电脑用户目录内有.ssh文件夹，没有则可在此鼠标右键git bash here输入：mkdir .ssh
 
@@ -51,21 +54,21 @@ ssh-add 打开.ssh文件夹下的id_rsa_pub文件复制，或直接使用命令c
 
 打开github网页登录刚刚注册的github账号，登录后点击头像-settings
 
-![image](img/git03.png)
+![image](https://github.com/sundys/sundys.github.io/blob/master/img/git03.png)
 
 选择ssh and GPG后点击 keys New SSH key
 
-![image](img/git04.png)
-![image](img/git05.png)
+![image](https://github.com/sundys/sundys.github.io/blob/master/img/git04.png)
+![image](https://github.com/sundys/sundys.github.io/blob/master/img/git05.png)
 
 title随便填，然后把刚刚复制的id_rsa_pub的内容复制到Key框下，点击Add SSH key即可
 
-![image](img/git06.png)
+![image](https://github.com/sundys/sundys.github.io/blob/master/img/git06.png)
 
 输入你的Github密码即可完成SSH Key的添加
 
 3.测试是否配置ssh key成功，在git bash命令行下输入ssh -T git@github.com 如果刚刚在生成ssh密钥时有输入密码此处会要求输入密码，输入正确才会连接成功。另外在以后的项目push中也会要求输入该密码，所以请勿遗忘。
 
-![image](img/git07.png)
+![image](https://github.com/sundys/sundys.github.io/blob/master/img/git07.png)
 
 至此，基本的git配置已完成。
