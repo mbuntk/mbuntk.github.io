@@ -9,7 +9,7 @@ catalog: true
 tags:
     - N1盒子
     - Docker
-	- Openwrt
+    - Openwrt
 ---
 
 ## 说明
