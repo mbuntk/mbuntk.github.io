@@ -8,6 +8,7 @@ header-img: img/post-bg-cook.jpg
 catalog: true
 tags:
     - N1盒子
+	- Armbian
 ---
 
 一、首先将var/log等目录导入内存盘

@@ -8,6 +8,8 @@ header-img: img/post-bg-cook.jpg
 catalog: true
 tags:
     - N1盒子
+	- Armbian
+	- Docker
 ---
 
 1.刷armbian、安装docker,这个有很多教程了，不再写了。
