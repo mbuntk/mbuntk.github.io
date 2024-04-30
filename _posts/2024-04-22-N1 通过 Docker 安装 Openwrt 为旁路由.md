@@ -54,6 +54,7 @@ docker run \
 docker exec unifreq-openwrt-aarch64 sed -e "s/192.168.1.1/192.168.4.11/" -i /etc/config/network
 docker restart unifreq-openwrt-aarch64
 ```
+注意此处命令192.168.1.1是openwrt默认ip, 192.168.4.11是把其替换为要指定的openwrt IP.
 
 ## 5\. http://192.168.4.11 访问 openwrt
 
