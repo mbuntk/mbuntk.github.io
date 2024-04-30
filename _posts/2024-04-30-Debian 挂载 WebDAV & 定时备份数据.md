@@ -29,11 +29,15 @@ mkdir /mnt/alist
 
 ```bash
 sed -i 's/# use_locks 1/use_locks 0/g' /etc/davfs2/davfs2.conf
+或手动修改
+nano /etc/davfs2/davfs2.conf
 ```
 4\. 保存用户名密码，以后可以直接免密码挂载
 
 ```bash
 echo "你的WebDAV地址 用户名 密码" >> /etc/davfs2/secrets  
+或手动添加
+nano /etc/davfs2/secrets
 ```
 
 5\. 开机自动挂载
@@ -44,9 +48,9 @@ echo "你的WebDAV地址 用户名 密码" >> /etc/davfs2/secrets
 
 > /etc/fstab 是 Linux 系统中的一个配置文件，用于定义文件系统的挂载点和相关的选项。它的主要作用是在系统启动时自动挂载文件系统。fstab 的全名是 "file systems table"，它记录了系统上所有可用的文件系统和它们的挂载配置。
 ```bash
-echo "你的WebDAV地址 /bywp davfs rw,user,file_mode=0600,dir_mode=0700,_netdev 0 0" >> /etc/fstab
+echo "你的WebDAV地址 /mnt/alist davfs rw,user,file_mode=0600,dir_mode=0700,_netdev 0 0" >> /etc/fstab
 ```
-重启即可自动挂载
+重启即可自动挂载,注意此方法有一定风险,挂载不成功会导致无法进入系统.推荐方案二.
 
 方案二：
 
