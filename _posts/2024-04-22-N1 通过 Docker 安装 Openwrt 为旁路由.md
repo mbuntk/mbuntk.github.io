@@ -85,6 +85,7 @@ docker restart unifreq-openwrt-aarch64
 目前宿主机无法访问 Openwrt 以及外网, 需要的配置: 在 /etc/rc.local 中增加初始化逻辑:
 
 ```
+ip link set eth0 promisc on
 ip link add mynet link eth0 type macvlan mode bridge 
 ip addr add 192.168.4.2 dev mynet
 ip link set mynet up
@@ -95,3 +96,11 @@ ip route add 192.168.4.11 dev mynet
 
 目前主路由下的设备可以在网络设置中将路由器的地址改为`192.168.4.11`即可实现通过旁路由上网. 为了避免各个设备分别配置, 达到全局使用旁路由的目的, 可以配置主路由: 将 DHCP 默认网关 和 DNS 都改为 `192.168.4.11` 
 ![image](/img/ns-dk-05.png)
+
+## 12\. 关于旁路由设置后，主路由WIFI无法上网的问题
+
+进入网络——防火墙——自定义规则，添加
+
+```
+iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE
+```
