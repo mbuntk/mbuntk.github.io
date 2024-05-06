@@ -60,9 +60,9 @@ crontab -e
 ```
 添加一个开机执行的任务
 ```bash
-@reboot sleep 30 && mount -t davfs 你的WebDAV地址 /mnt/alist -o rw,user,file_mode=0600,dir_mode=0700,_netdev
+@reboot sleep 180 && mount -t davfs 你的WebDAV地址 /mnt/alist -o rw,user,file_mode=0600,dir_mode=0700,_netdev
 ```
-重启系统后查看是否挂载成功：
+注意定时挂载时间,如果是本机docker运行alist要设置时间长些,等待alist启动成功,重启系统后查看是否挂载成功：
 ```bash
 df -h
 ```
