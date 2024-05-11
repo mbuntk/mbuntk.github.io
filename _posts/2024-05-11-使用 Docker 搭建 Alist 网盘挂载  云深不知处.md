@@ -20,15 +20,15 @@ tags:
 
 <table><tbody><tr><td><pre><span>1</span><br></pre></td><td><pre><span>docker run -d --restart=unless-stopped -v /etc/alist:/opt/alist/data -p 5244:5244 -e PUID=0 -e PGID=0 -e UMASK=022 --name="alist" xhofe/alist:latest</span><br></pre></td></tr></tbody></table>
 
-## 2、生成管理员密码")2、生成管理员密码
+## 2、生成管理员密码
 
 3.25.0以上版本将密码改成加密方式存储的hash值，无法直接反算出密码，如果忘记了密码只能通过重新 `随机生成` 或者 `手动设置`
 
 <table><tbody><tr><td><pre><span>1</span><br><span>2</span><br><span>3</span><br><span>4</span><br></pre></td><td><pre><span># 随机生成一个密码</span><br><span>docker exec -it alist ./alist admin random</span><br><span># 手动设置一个密码,`NEW_PASSWORD`是指你需要设置的密码</span><br><span>docker exec -it alist ./alist admin set NEW_PASSWORD</span><br></pre></td></tr></tbody></table>
 
-## 3、配置 Nginx")3、配置 `Nginx`
+## 3、配置 `Nginx`
 
-## 3.1、生成证书")3.1、生成证书
+## 3.1、生成证书
 
 <table><tbody><tr><td><pre><span>1</span><br></pre></td><td><pre><span>certbot certonly --dns-cloudflare --dns-cloudflare-credentials ~/.secrets/certbot/cloudflare.ini -d alist.ysbzcn.com --email 'email@ysbzcn.com'</span><br></pre></td></tr></tbody></table>
 
@@ -44,19 +44,19 @@ tags:
 
 ## 4、更新
 
-## 4.1、停止并移除旧容器")4.1、停止并移除旧容器
+## 4.1、停止并移除旧容器
 
 <table><tbody><tr><td><pre><span>1</span><br></pre></td><td><pre><span>docker stop alist &amp;&amp; docker rm alist</span><br></pre></td></tr></tbody></table>
 
-## 4.2、拉取最新镜像")4.2、拉取最新镜像
+## 4.2、拉取最新镜像
 
 <table><tbody><tr><td><pre><span>1</span><br></pre></td><td><pre><span>docker pull xhofe/alist:latest</span><br></pre></td></tr></tbody></table>
 
-## 4.3、重新安装")4.3、重新安装
+## 4.3、重新安装
 
 <table><tbody><tr><td><pre><span>1</span><br></pre></td><td><pre><span>docker run -d --restart=unless-stopped -v /etc/alist:/opt/alist/data -p 5244:5244 -e PUID=0 -e PGID=0 -e UMASK=022 --name="alist" xhofe/alist:latest</span><br></pre></td></tr></tbody></table>
 
-## 5、设置")5、设置
+## 5、设置
 
 对照 [官方文档](https://alist.nn.ci/zh/) 进行设置。
 
