@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      Linux(甲骨文 GCP等)修改时区
-subtitle:   Linux(甲骨文 GCP等)修改时区
+title:      Ubuntu系统垃圾清理Debian系统垃圾清理
+subtitle:   Ubuntu系统垃圾清理Debian系统垃圾清理
 date:       2024-05-13
 author:     sundys
 header-img: img/bg-linux.jpg
