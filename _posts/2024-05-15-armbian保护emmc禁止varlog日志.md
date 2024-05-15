@@ -1,0 +1,134 @@
+---
+layout:     post
+title:      armbian保护emmc禁止varlog日志
+subtitle:   armbian保护emmc禁止varlog日志,docker容器限制日志大小 
+date:       2024-05-15
+author:     sundys
+header-img: img/docker.png
+catalog: true
+tags:
+    - Docker
+---
+
+因为emmc存储是一种flash存储技术，其写入寿命非常有限，所以系统运行中应尽量避免数据写入。
+
+如果我们没有装什么特殊程序的话，通常来说数据的主要写入就是/var/log目录的日志了，一天几十MB还是有的。
+
+armbian其实已经考虑了这个问题，因为armbian就是给arm架构订制的debian发行版嘛，所以它默认是创建了一个内存盘（zram文件系统）挂载到了/var/log目录：
+
+<table><tbody><tr><td data-settings="show"></td><td><div><p><span>root</span><span>@</span><span>aml</span><span>:</span><span>/</span><span>var</span><span>/</span><span>log</span><span># df -h</span></p><p><span>Filesystem&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>Size&nbsp;&nbsp;</span><span>Used </span><span>Avail </span><span>Use</span><span>%</span><span> </span><span>Mounted </span><span>on</span></p><p><span>udev</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>469M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>469M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>dev</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>184M</span><span>&nbsp;&nbsp; </span><span>22M</span><span>&nbsp;&nbsp;</span><span>163M</span><span>&nbsp;&nbsp;</span><span>12</span><span>%</span><span> </span><span>/</span><span>run</span></p><p><span>/</span><span>dev</span><span>/</span><span>mmcblk1p2</span><span>&nbsp;&nbsp;</span><span>6.4G</span><span>&nbsp;&nbsp;</span><span>2.1G</span><span>&nbsp;&nbsp;</span><span>4.3G</span><span>&nbsp;&nbsp;</span><span>33</span><span>%</span><span> </span><span>/</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>920M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>920M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>dev</span><span>/</span><span>shm</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>5.0M</span><span>&nbsp;&nbsp;</span><span>4.0K</span><span>&nbsp;&nbsp;</span><span>5.0M</span><span>&nbsp;&nbsp; </span><span>1</span><span>%</span><span> </span><span>/</span><span>run</span><span>/</span><span>lock</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>920M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>920M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>sys</span><span>/</span><span>fs</span><span>/</span><span>cgroup</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>920M</span><span>&nbsp;&nbsp;</span><span>8.0K</span><span>&nbsp;&nbsp;</span><span>920M</span><span>&nbsp;&nbsp; </span><span>1</span><span>%</span><span> </span><span>/</span><span>tmp</span></p><p><span>/</span><span>dev</span><span>/</span><span>mmcblk1p1</span><span>&nbsp;&nbsp;</span><span>122M</span><span>&nbsp;&nbsp; </span><span>58M</span><span>&nbsp;&nbsp; </span><span>64M</span><span>&nbsp;&nbsp;</span><span>48</span><span>%</span><span> </span><span>/</span><span>boot</span></p><p><span>/</span><span>dev</span><span>/</span><span>zram0</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>49M</span><span>&nbsp;&nbsp; </span><span>15M</span><span>&nbsp;&nbsp; </span><span>31M</span><span>&nbsp;&nbsp;</span><span>32</span><span>%</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>184M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>184M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>run</span><span>/</span><span>user</span><span>/</span><span>0</span></p></div></td></tr></tbody></table>
+
+所以频繁的日志写入并不会直接伤害到emmc。
+
+但是这块zram盘只有49MB，基本上1~2天就会写满，所以armbian是如何处理的呢？
+
+经过我的研究，发现系统做了1个systemd启动任务+2个cron任务用来解决这个问题，下面简单说一下原理。
+
+## 详细分析
+
+当然是定期删除日志了，难不成还有魔法嘛。
+
+<table><tbody><tr><td data-settings="show"></td><td><div><p><span>root</span><span>@</span><span>aml</span><span>:</span><span>/</span><span>var</span><span>/</span><span>log</span><span># cat /etc/cron.d/armbian-truncate-logs</span></p><p><span>PATH</span><span>=</span><span>/</span><span>usr</span><span>/</span><span>local</span><span>/</span><span>sbin</span><span>:</span><span>/</span><span>usr</span><span>/</span><span>local</span><span>/</span><span>bin</span><span>:</span><span>/</span><span>sbin</span><span>:</span><span>/</span><span>bin</span><span>:</span><span>/</span><span>usr</span><span>/</span><span>sbin</span><span>:</span><span>/</span><span>usr</span><span>/</span><span>bin</span></p><p><span>*</span><span>/</span><span>15</span><span> </span><span>*</span><span> </span><span>*</span><span> </span><span>*</span><span> </span><span>*</span><span> </span><span>root</span><span> </span><span>/</span><span>usr</span><span>/</span><span>lib</span><span>/</span><span>armbian</span><span>/</span><span>armbian</span><span>-</span><span>truncate</span><span>-</span><span>logs</span></p></div></td></tr></tbody></table>
+
+每15分钟就会执行一次truncate日志，这个脚本内容如下：
+
+<table><tbody><tr><td data-settings="show"><div><p>1</p><p>2</p><p>3</p><p>4</p><p>5</p><p>6</p><p>7</p><p>8</p><p>9</p><p>10</p><p>11</p><p>12</p><p>13</p><p>14</p><p>15</p><p>16</p><p>17</p><p>18</p><p>19</p><p>20</p></div></td><td><div><p><span>treshold</span><span>=</span><span>75</span><span> </span><span># %</span></p><p><span>[</span><span> </span><span>-</span><span>f</span><span> </span><span>/</span><span>etc</span><span>/</span><span>default</span><span>/</span><span>armbian</span><span>-</span><span>ramlog</span><span> </span><span>]</span><span> </span><span>&amp;&amp;</span><span> </span><span>.</span><span> </span><span>/</span><span>etc</span><span>/</span><span>default</span><span>/</span><span>armbian</span><span>-</span><span>ramlog</span></p><p><span>[</span><span> </span><span>"$ENABLED"</span><span> </span><span>!=</span><span> </span><span>true</span><span> </span><span>]</span><span> </span><span>&amp;&amp;</span><span> </span><span>exit</span><span> </span><span>0</span></p><p><span>logusage</span><span>=</span><span>$</span><span>(</span><span>df</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span>/</span><span> </span><span>--</span><span>output</span><span>=</span><span>pcent</span><span> </span><span>|</span><span> </span><span>tail</span><span> </span><span>-</span><span>1</span><span> </span><span>|</span><span>cut</span><span> </span><span>-</span><span>d</span><span> </span><span>"%"</span><span> </span><span>-</span><span>f</span><span> </span><span>1</span><span>)</span></p><p><span>if</span><span> </span><span>[</span><span> </span><span>$logusage</span><span> </span><span>-</span><span>ge</span><span> </span><span>$treshold</span><span> </span><span>]</span><span>;</span><span> </span><span>then</span></p><p><span></span><span># write to SD</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>/</span><span>usr</span><span>/</span><span>lib</span><span>/</span><span>armbian</span><span>/</span><span>armbian</span><span>-</span><span>ramlog </span><span>write</span><span> </span><span>&gt;</span><span>/</span><span>dev</span><span>/</span><span>null</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span># rotate logs on "disk"</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>chown</span><span> </span><span>root</span><span>.root</span><span> </span><span>-</span><span>R</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span>.hdd</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>/</span><span>usr</span><span>/</span><span>sbin</span><span>/</span><span>logrotate</span><span> </span><span>--</span><span>force</span><span> </span><span>/</span><span>etc</span><span>/</span><span>logrotate</span><span>.conf</span></p><p><span></span><span># truncate</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>/</span><span>usr</span><span>/</span><span>bin</span><span>/</span><span>find</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.log'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.xz'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'lastlog'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'messages'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'debug'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'syslog'</span><span> </span><span>|</span><span> </span><span>xargs</span><span> </span><span>truncate</span><span> </span><span>--</span><span>size</span><span> </span><span>0</span></p><p><span></span><span>/</span><span>usr</span><span>/</span><span>bin</span><span>/</span><span>find</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span> </span><span>-</span><span>name</span><span> </span><span>'btmp'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'wtmp'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'faillog'</span><span> </span><span>|</span><span> </span><span>xargs</span><span> </span><span>truncate</span><span> </span><span>--</span><span>size</span><span> </span><span>0</span></p><p><span></span><span># remove</span></p><p><span></span><span>/</span><span>usr</span><span>/</span><span>bin</span><span>/</span><span>find</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.[0-9]'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.gz'</span><span> </span><span>|</span><span> </span><span>xargs</span><span> </span><span>rm</span><span> </span><span>&gt;</span><span>/</span><span>dev</span><span>/</span><span>null</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span></p><p><span>fi</span></p></div></td></tr></tbody></table>
+
+其实就是看一下/var/log的zram盘是否利用率超过75%，一旦超过就扫描/var/log下面各种日志文件进行截断。
+
+另外，我们还看到它调用：
+
+> /usr/lib/armbian/armbian-ramlog write >/dev/null 2>&1
+
+这个脚本的write命令会把/var/log内存盘的数据rsync到/var/log.hdd/目录，而/var/log.hdd目录是emmc上的一部分。因此，我们明白在truncate日志之前会先把当前最新日志持久化到emmc上，然后再把zram内存里的日志截断掉。
+
+另外，这个脚本还调用了logrotate程序进行日志滚动，我详细看了一下logrotate配置文件，发现它归档的是/var/log.hdd里面的日志文件，其根本目的是为了配合zram -> emmc做rsync的时候可以结合rsync –delete选项删除掉归档的老日志文件，起到控制emmc容量的目的。**（大家不理解可以不关心这一段逻辑）**
+
+**所以呢，这个cron会导致每15分钟就会向emmc同步一次数据，并且缩小zram盘占用容量，这无疑是对emmc的频繁伤害。**
+
+另外还有一个天级cron是进行一次write同步，也是调用的如下同步命令：
+
+> /usr/lib/armbian/armbian-ramlog write >/dev/null 2>&1
+
+因此，最简单的就是让这个write操作失灵，不向emmc同步日志数据不就好了嘛。
+
+## 解决方法
+
+打开/usr/lib/armbian/armbian-ramlog脚本，它实际执行的是这个shell方法：
+
+<table><tbody><tr><td data-settings="show"></td><td><div><p><span>syncToDisk</span><span> </span><span>(</span><span>)</span><span> </span><span>{</span></p><p><span></span><span>isSafe</span></p><p><span></span><span>echo</span><span> </span><span>-</span><span>e</span><span> </span><span>"\n\n$(date): Syncing logs from $LOG_TYPE to storage\n"</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>if</span><span> </span><span>[</span><span> </span><span>"$USE_RSYNC"</span><span> </span><span>=</span><span> </span><span>true</span><span> </span><span>]</span><span>;</span><span> </span><span>then</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>rsync</span><span> </span><span>-</span><span>aXWv</span><span> </span><span>--</span><span>delete</span><span> </span><span>--</span><span>exclude </span><span>armbian</span><span>-</span><span>ramlog</span><span>.log</span><span> </span><span>--</span><span>links</span><span> </span><span>$RAM_LOG</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>else</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>cp</span><span> </span><span>-</span><span>rfup</span><span> </span><span>$RAM_LOG</span><span> </span><span>-</span><span>T</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>fi</span></p><p><span></span><span>sync</span></p><p><span>}</span></p></div></td></tr></tbody></table>
+
+只需要在函数头部返回即可避免rsync：
+
+<table><tbody><tr><td data-settings="show"></td><td><div><p><span>syncToDisk</span><span> </span><span>(</span><span>)</span><span> </span><span>{</span></p><p><span></span><span># no sync to protect emmc</span></p><p><span></span><span>return</span><span> </span><span>0</span></p><p><span></span><span>isSafe</span></p><p><span></span><span>echo</span><span> </span><span>-</span><span>e</span><span> </span><span>"\n\n$(date): Syncing logs from $LOG_TYPE to storage\n"</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>if</span><span> </span><span>[</span><span> </span><span>"$USE_RSYNC"</span><span> </span><span>=</span><span> </span><span>true</span><span> </span><span>]</span><span>;</span><span> </span><span>then</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>rsync</span><span> </span><span>-</span><span>aXWv</span><span> </span><span>--</span><span>delete</span><span> </span><span>--</span><span>exclude </span><span>armbian</span><span>-</span><span>ramlog</span><span>.log</span><span> </span><span>--</span><span>links</span><span> </span><span>$RAM_LOG</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>else</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>cp</span><span> </span><span>-</span><span>rfup</span><span> </span><span>$RAM_LOG</span><span> </span><span>-</span><span>T</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>fi</span></p><p><span></span><span>sync</span></p><p><span>}</span></p></div></td></tr></tbody></table>
+
+可以再观察一下/var/log与/var/log.hdd，会发现/var/log.hdd已经不再有后续数据更新，而/var/log仍旧会自动在75使用率的时候进行日志截断。
+
+> 最后补充，armbian做了一个systemd服务：/lib/systemd/system/armbian-ramlog.service，它开机会创建zram盘，然后从emmc的/var/log.hdd中load数据到zram的/var/log路径下，完成开机初始化。
+
+### docker限制日志文件大小
+
+一、docker查看日志文件的方法, 除了
+
+```  
+docker logs -f 容器ID/容器名
+```
+这个方法以外。
+
+在linux上，一般docker的日志文件存储在/var/lib/docker/containers/container\_id/ 目录下的 各个容器ID对应的目录下的\*-json.log 文件中
+
+方法1：可以直接进入该目录下，查找日志文件
+
+方法2：可以写一个脚本文件，执行即可
+
+　　1》创建.sh文件【在你自己可以找到的目录下】
+
+文件内容
+
+```
+#!/bin/<span>sh 
+echo </span><span>"</span><span>======== docker containers logs file size ========</span><span>"</span><span>  
+
+logs</span>=$(find /<span>var</span>/lib/docker/containers/ -name *-<span>json.log)  
+
+</span><span>for</span> log <span>in</span><span> $logs  
+        </span><span>do</span><span>  
+             ls </span>-<span>lh $log   
+        done</span>
+```
+
+　　2》为该文件设置权限
+
+```
+chmod +x docker_log_size.sh
+```
+
+　　3》执行该文件
+
+二.设置Docker容器日志文件大小限制
+
+1.新建/etc/docker/daemon.json，若有就不用新建了。添加log-dirver和log-opts参数，样例如下：
+
+```
+# vim /etc/docker/<span>daemon.json
+
+{
+  </span><span>"</span><span>log-driver</span><span>"</span>:<span>"</span><span>json-file</span><span>"</span><span>,
+  </span><span>"</span><span>log-opts</span><span>"</span>: {<span>"</span><span>max-size</span><span>"</span>:<span>"</span><span>500m</span><span>"</span>, <span>"</span><span>max-file</span><span>"</span>:<span>"</span><span>3</span><span>"</span><span>}
+}</span>
+```
+
+max-size=500m，意味着一个容器日志大小上限是500M，   
+max-file=3，意味着一个容器有三个日志，分别是id+.json、id+1.json、id+2.json。
+
+2.然后重启docker的守护线程
+
+命令如下： 
+```
+systemctl daemon-reload  
+```
+```
+systemctl restart docker
+```
+【需要注意的是：设置的日志大小规则，只对新建的容器有效】
+
