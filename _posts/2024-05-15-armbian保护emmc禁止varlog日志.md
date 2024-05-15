@@ -15,9 +15,20 @@ tags:
 如果我们没有装什么特殊程序的话，通常来说数据的主要写入就是/var/log目录的日志了，一天几十MB还是有的。
 
 armbian其实已经考虑了这个问题，因为armbian就是给arm架构订制的debian发行版嘛，所以它默认是创建了一个内存盘（zram文件系统）挂载到了/var/log目录：
-
-<table><tbody><tr><td data-settings="show"></td><td><div><p><span>root</span><span>@</span><span>aml</span><span>:</span><span>/</span><span>var</span><span>/</span><span>log</span><span># df -h</span></p><p><span>Filesystem&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>Size&nbsp;&nbsp;</span><span>Used </span><span>Avail </span><span>Use</span><span>%</span><span> </span><span>Mounted </span><span>on</span></p><p><span>udev</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>469M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>469M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>dev</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>184M</span><span>&nbsp;&nbsp; </span><span>22M</span><span>&nbsp;&nbsp;</span><span>163M</span><span>&nbsp;&nbsp;</span><span>12</span><span>%</span><span> </span><span>/</span><span>run</span></p><p><span>/</span><span>dev</span><span>/</span><span>mmcblk1p2</span><span>&nbsp;&nbsp;</span><span>6.4G</span><span>&nbsp;&nbsp;</span><span>2.1G</span><span>&nbsp;&nbsp;</span><span>4.3G</span><span>&nbsp;&nbsp;</span><span>33</span><span>%</span><span> </span><span>/</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>920M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>920M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>dev</span><span>/</span><span>shm</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>5.0M</span><span>&nbsp;&nbsp;</span><span>4.0K</span><span>&nbsp;&nbsp;</span><span>5.0M</span><span>&nbsp;&nbsp; </span><span>1</span><span>%</span><span> </span><span>/</span><span>run</span><span>/</span><span>lock</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>920M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>920M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>sys</span><span>/</span><span>fs</span><span>/</span><span>cgroup</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>920M</span><span>&nbsp;&nbsp;</span><span>8.0K</span><span>&nbsp;&nbsp;</span><span>920M</span><span>&nbsp;&nbsp; </span><span>1</span><span>%</span><span> </span><span>/</span><span>tmp</span></p><p><span>/</span><span>dev</span><span>/</span><span>mmcblk1p1</span><span>&nbsp;&nbsp;</span><span>122M</span><span>&nbsp;&nbsp; </span><span>58M</span><span>&nbsp;&nbsp; </span><span>64M</span><span>&nbsp;&nbsp;</span><span>48</span><span>%</span><span> </span><span>/</span><span>boot</span></p><p><span>/</span><span>dev</span><span>/</span><span>zram0</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>49M</span><span>&nbsp;&nbsp; </span><span>15M</span><span>&nbsp;&nbsp; </span><span>31M</span><span>&nbsp;&nbsp;</span><span>32</span><span>%</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span></p><p><span>tmpfs</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>184M</span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span>0</span><span>&nbsp;&nbsp;</span><span>184M</span><span>&nbsp;&nbsp; </span><span>0</span><span>%</span><span> </span><span>/</span><span>run</span><span>/</span><span>user</span><span>/</span><span>0</span></p></div></td></tr></tbody></table>
-
+```
+root@aml:/var/log# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+udev            469M     0  469M   0% /dev
+tmpfs           184M   22M  163M  12% /run
+/dev/mmcblk1p2  6.4G  2.1G  4.3G  33% /
+tmpfs           920M     0  920M   0% /dev/shm
+tmpfs           5.0M  4.0K  5.0M   1% /run/lock
+tmpfs           920M     0  920M   0% /sys/fs/cgroup
+tmpfs           920M  8.0K  920M   1% /tmp
+/dev/mmcblk1p1  122M   58M   64M  48% /boot
+/dev/zram0       49M   15M   31M  32% /var/log
+tmpfs           184M     0  184M   0% /run/user/0
+```
 所以频繁的日志写入并不会直接伤害到emmc。
 
 但是这块zram盘只有49MB，基本上1~2天就会写满，所以armbian是如何处理的呢？
