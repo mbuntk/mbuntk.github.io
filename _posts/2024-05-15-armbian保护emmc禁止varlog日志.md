@@ -88,15 +88,15 @@ vi docker_log_size.sh
 文件内容
 
 ```
-#!/bin/<span>sh 
-echo </span><span>"</span><span>======== docker containers logs file size ========</span><span>"</span><span>  
+#!/bin/sh 
+echo "======== docker containers logs file size ========"  
 
-logs</span>=$(find /<span>var</span>/lib/docker/containers/ -name *-<span>json.log)  
+logs=$(find /var/lib/docker/containers/ -name *-json.log)  
 
-</span><span>for</span> log <span>in</span><span> $logs  
-        </span><span>do</span><span>  
-             ls </span>-<span>lh $log   
-        done</span>
+for log in $logs  
+        do  
+             ls -lh $log   
+        done
 ```
 
 　　2》为该文件设置权限
@@ -106,6 +106,9 @@ chmod +x docker_log_size.sh
 ```
 
 　　3》执行该文件
+```
+./docker_log_size.sh
+```
 
 二.设置Docker容器日志文件大小限制
 
@@ -115,9 +118,9 @@ chmod +x docker_log_size.sh
 # vim /etc/docker/<span>daemon.json
 
 {
-  </span><span>"</span><span>log-driver</span><span>"</span>:<span>"</span><span>json-file</span><span>"</span><span>,
-  </span><span>"</span><span>log-opts</span><span>"</span>: {<span>"</span><span>max-size</span><span>"</span>:<span>"</span><span>500m</span><span>"</span>, <span>"</span><span>max-file</span><span>"</span>:<span>"</span><span>3</span><span>"</span><span>}
-}</span>
+  "log-driver":"json-file",
+  "log-opts": {"max-size":"1m", "max-file":"1"}
+}
 ```
 
 max-size=500m，意味着一个容器日志大小上限是500M，   
