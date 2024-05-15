@@ -115,7 +115,7 @@ chmod +x docker_log_size.sh
 1.新建/etc/docker/daemon.json，若有就不用新建了。添加log-dirver和log-opts参数，样例如下：
 
 ```
-# vim /etc/docker/<span>daemon.json
+# vim /etc/docker/daemon.json
 
 {
   "log-driver":"json-file",
