@@ -27,13 +27,36 @@ armbian其实已经考虑了这个问题，因为armbian就是给arm架构订制
 ## 详细分析
 
 当然是定期删除日志了，难不成还有魔法嘛。
-
-<table><tbody><tr><td data-settings="show"></td><td><div><p><span>root</span><span>@</span><span>aml</span><span>:</span><span>/</span><span>var</span><span>/</span><span>log</span><span># cat /etc/cron.d/armbian-truncate-logs</span></p><p><span>PATH</span><span>=</span><span>/</span><span>usr</span><span>/</span><span>local</span><span>/</span><span>sbin</span><span>:</span><span>/</span><span>usr</span><span>/</span><span>local</span><span>/</span><span>bin</span><span>:</span><span>/</span><span>sbin</span><span>:</span><span>/</span><span>bin</span><span>:</span><span>/</span><span>usr</span><span>/</span><span>sbin</span><span>:</span><span>/</span><span>usr</span><span>/</span><span>bin</span></p><p><span>*</span><span>/</span><span>15</span><span> </span><span>*</span><span> </span><span>*</span><span> </span><span>*</span><span> </span><span>*</span><span> </span><span>root</span><span> </span><span>/</span><span>usr</span><span>/</span><span>lib</span><span>/</span><span>armbian</span><span>/</span><span>armbian</span><span>-</span><span>truncate</span><span>-</span><span>logs</span></p></div></td></tr></tbody></table>
-
+```
+root@aml:/var/log# cat /etc/cron.d/armbian-truncate-logs
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+*/15 * * * * root /usr/lib/armbian/armbian-truncate-logs
+```
 每15分钟就会执行一次truncate日志，这个脚本内容如下：
 
-<table><tbody><tr><td data-settings="show"><div><p>1</p><p>2</p><p>3</p><p>4</p><p>5</p><p>6</p><p>7</p><p>8</p><p>9</p><p>10</p><p>11</p><p>12</p><p>13</p><p>14</p><p>15</p><p>16</p><p>17</p><p>18</p><p>19</p><p>20</p></div></td><td><div><p><span>treshold</span><span>=</span><span>75</span><span> </span><span># %</span></p><p><span>[</span><span> </span><span>-</span><span>f</span><span> </span><span>/</span><span>etc</span><span>/</span><span>default</span><span>/</span><span>armbian</span><span>-</span><span>ramlog</span><span> </span><span>]</span><span> </span><span>&amp;&amp;</span><span> </span><span>.</span><span> </span><span>/</span><span>etc</span><span>/</span><span>default</span><span>/</span><span>armbian</span><span>-</span><span>ramlog</span></p><p><span>[</span><span> </span><span>"$ENABLED"</span><span> </span><span>!=</span><span> </span><span>true</span><span> </span><span>]</span><span> </span><span>&amp;&amp;</span><span> </span><span>exit</span><span> </span><span>0</span></p><p><span>logusage</span><span>=</span><span>$</span><span>(</span><span>df</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span>/</span><span> </span><span>--</span><span>output</span><span>=</span><span>pcent</span><span> </span><span>|</span><span> </span><span>tail</span><span> </span><span>-</span><span>1</span><span> </span><span>|</span><span>cut</span><span> </span><span>-</span><span>d</span><span> </span><span>"%"</span><span> </span><span>-</span><span>f</span><span> </span><span>1</span><span>)</span></p><p><span>if</span><span> </span><span>[</span><span> </span><span>$logusage</span><span> </span><span>-</span><span>ge</span><span> </span><span>$treshold</span><span> </span><span>]</span><span>;</span><span> </span><span>then</span></p><p><span></span><span># write to SD</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>/</span><span>usr</span><span>/</span><span>lib</span><span>/</span><span>armbian</span><span>/</span><span>armbian</span><span>-</span><span>ramlog </span><span>write</span><span> </span><span>&gt;</span><span>/</span><span>dev</span><span>/</span><span>null</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span># rotate logs on "disk"</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>chown</span><span> </span><span>root</span><span>.root</span><span> </span><span>-</span><span>R</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span>.hdd</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>/</span><span>usr</span><span>/</span><span>sbin</span><span>/</span><span>logrotate</span><span> </span><span>--</span><span>force</span><span> </span><span>/</span><span>etc</span><span>/</span><span>logrotate</span><span>.conf</span></p><p><span></span><span># truncate</span></p><p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>/</span><span>usr</span><span>/</span><span>bin</span><span>/</span><span>find</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.log'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.xz'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'lastlog'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'messages'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'debug'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'syslog'</span><span> </span><span>|</span><span> </span><span>xargs</span><span> </span><span>truncate</span><span> </span><span>--</span><span>size</span><span> </span><span>0</span></p><p><span></span><span>/</span><span>usr</span><span>/</span><span>bin</span><span>/</span><span>find</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span> </span><span>-</span><span>name</span><span> </span><span>'btmp'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'wtmp'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'faillog'</span><span> </span><span>|</span><span> </span><span>xargs</span><span> </span><span>truncate</span><span> </span><span>--</span><span>size</span><span> </span><span>0</span></p><p><span></span><span># remove</span></p><p><span></span><span>/</span><span>usr</span><span>/</span><span>bin</span><span>/</span><span>find</span><span> </span><span>/</span><span>var</span><span>/</span><span>log</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.[0-9]'</span><span> </span><span>-</span><span>or</span><span> </span><span>-</span><span>name</span><span> </span><span>'*.gz'</span><span> </span><span>|</span><span> </span><span>xargs</span><span> </span><span>rm</span><span> </span><span>&gt;</span><span>/</span><span>dev</span><span>/</span><span>null</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span></p><p><span>fi</span></p></div></td></tr></tbody></table>
-
+```
+treshold=75 # %
+ 
+[ -f /etc/default/armbian-ramlog ] && . /etc/default/armbian-ramlog
+ 
+[ "$ENABLED" != true ] && exit 0
+ 
+logusage=$(df /var/log/ --output=pcent | tail -1 |cut -d "%" -f 1)
+if [ $logusage -ge $treshold ]; then
+		# write to SD
+                /usr/lib/armbian/armbian-ramlog write >/dev/null 2>&1
+                # rotate logs on "disk"
+                chown root.root -R /var/log.hdd
+                /usr/sbin/logrotate --force /etc/logrotate.conf
+		# truncate
+	        /usr/bin/find /var/log -name '*.log' -or -name '*.xz' -or -name 'lastlog' -or -name 'messages' -or -name 'debug' -or -name 'syslog' | xargs truncate --size 0
+		/usr/bin/find /var/log -name 'btmp' -or -name 'wtmp' -or -name 'faillog' | xargs truncate --size 0
+		# remove
+		/usr/bin/find /var/log -name '*.[0-9]' -or -name '*.gz' | xargs rm >/dev/null 2>&1
+ 
+fi
+```
 其实就是看一下/var/log的zram盘是否利用率超过75%，一旦超过就扫描/var/log下面各种日志文件进行截断。
 
 另外，我们还看到它调用：
@@ -55,12 +78,39 @@ armbian其实已经考虑了这个问题，因为armbian就是给arm架构订制
 ## 解决方法
 
 打开/usr/lib/armbian/armbian-ramlog脚本，它实际执行的是这个shell方法：
-
-<table><tbody><tr><td data-settings="show"></td><td><div><p><span>syncToDisk</span><span> </span><span>(</span><span>)</span><span> </span><span>{</span></p><p><span></span><span>isSafe</span></p><p><span></span><span>echo</span><span> </span><span>-</span><span>e</span><span> </span><span>"\n\n$(date): Syncing logs from $LOG_TYPE to storage\n"</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>if</span><span> </span><span>[</span><span> </span><span>"$USE_RSYNC"</span><span> </span><span>=</span><span> </span><span>true</span><span> </span><span>]</span><span>;</span><span> </span><span>then</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>rsync</span><span> </span><span>-</span><span>aXWv</span><span> </span><span>--</span><span>delete</span><span> </span><span>--</span><span>exclude </span><span>armbian</span><span>-</span><span>ramlog</span><span>.log</span><span> </span><span>--</span><span>links</span><span> </span><span>$RAM_LOG</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>else</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>cp</span><span> </span><span>-</span><span>rfup</span><span> </span><span>$RAM_LOG</span><span> </span><span>-</span><span>T</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>fi</span></p><p><span></span><span>sync</span></p><p><span>}</span></p></div></td></tr></tbody></table>
-
+```
+syncToDisk () {
+	isSafe
+ 
+	echo -e "\n\n$(date): Syncing logs from $LOG_TYPE to storage\n" | $LOG_OUTPUT
+ 
+	if [ "$USE_RSYNC" = true ]; then
+		${NoCache} rsync -aXWv --delete --exclude armbian-ramlog.log --links $RAM_LOG $HDD_LOG 2>&1 | $LOG_OUTPUT
+	else
+		${NoCache} cp -rfup $RAM_LOG -T $HDD_LOG 2>&1 | $LOG_OUTPUT
+	fi
+ 
+	sync
+}
+```
 只需要在函数头部返回即可避免rsync：
-
-<table><tbody><tr><td data-settings="show"></td><td><div><p><span>syncToDisk</span><span> </span><span>(</span><span>)</span><span> </span><span>{</span></p><p><span></span><span># no sync to protect emmc</span></p><p><span></span><span>return</span><span> </span><span>0</span></p><p><span></span><span>isSafe</span></p><p><span></span><span>echo</span><span> </span><span>-</span><span>e</span><span> </span><span>"\n\n$(date): Syncing logs from $LOG_TYPE to storage\n"</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>if</span><span> </span><span>[</span><span> </span><span>"$USE_RSYNC"</span><span> </span><span>=</span><span> </span><span>true</span><span> </span><span>]</span><span>;</span><span> </span><span>then</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>rsync</span><span> </span><span>-</span><span>aXWv</span><span> </span><span>--</span><span>delete</span><span> </span><span>--</span><span>exclude </span><span>armbian</span><span>-</span><span>ramlog</span><span>.log</span><span> </span><span>--</span><span>links</span><span> </span><span>$RAM_LOG</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>else</span></p><p><span></span><span>$</span><span>{</span><span>NoCache</span><span>}</span><span> </span><span>cp</span><span> </span><span>-</span><span>rfup</span><span> </span><span>$RAM_LOG</span><span> </span><span>-</span><span>T</span><span> </span><span>$HDD_LOG</span><span> </span><span>2</span><span>&gt;</span><span>&amp;</span><span>1</span><span> </span><span>|</span><span> </span><span>$LOG_OUTPUT</span></p><p><span></span><span>fi</span></p><p><span></span><span>sync</span></p><p><span>}</span></p></div></td></tr></tbody></table>
+```
+syncToDisk () {
+	# no sync to protect emmc
+	return 0
+	isSafe
+ 
+	echo -e "\n\n$(date): Syncing logs from $LOG_TYPE to storage\n" | $LOG_OUTPUT
+ 
+	if [ "$USE_RSYNC" = true ]; then
+		${NoCache} rsync -aXWv --delete --exclude armbian-ramlog.log --links $RAM_LOG $HDD_LOG 2>&1 | $LOG_OUTPUT
+	else
+		${NoCache} cp -rfup $RAM_LOG -T $HDD_LOG 2>&1 | $LOG_OUTPUT
+	fi
+ 
+	sync
+}  
+```
 
 可以再观察一下/var/log与/var/log.hdd，会发现/var/log.hdd已经不再有后续数据更新，而/var/log仍旧会自动在75使用率的时候进行日志截断。
 
