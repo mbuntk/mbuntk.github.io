@@ -24,9 +24,9 @@ tmpfs                       184M    22M   163M        12%      /run
 tmpfs                       920M         0   920M          0%      /dev/shm
 tmpfs                        5.0M    4.0K    5.0M          1%      /run/lock
 tmpfs                       920M         0    920M         0%      /sys/fs/cgroup
-tmpfs                       920M     8.0K   920M         1%       /tmp
-/dev/mmcblk1p1    122M    58M     64M        48%      /boot
-/dev/zram0               49M    15M     31M        32%      /var/log
+tmpfs                       920M     8.0K   920M         1%      /tmp
+/dev/mmcblk1p1     122M    58M     64M        48%      /boot
+/dev/zram0                49M    15M     31M        32%      /var/log
 tmpfs                       184M         0   184M          0%      /run/user/0
 ```
 所以频繁的日志写入并不会直接伤害到emmc。
