@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobaXterm 许可证生成器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-left: 4px solid #4CAF50;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        .code-block {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: monospace;
+            white-space: pre;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MobaXterm 许可证生成器</h1>
+        
+        <div class="form-group">
+            <label for="username">用户名:</label>
+            <input type="text" id="username" placeholder="请输入用户名">
+        </div>
+        
+        <div class="form-group">
+            <label for="version">版本号:</label>
+            <input type="text" id="version" placeholder="例如: 10.9">
+        </div>
+        
+        <div class="form-group">
+            <label for="count">许可证数量:</label>
+            <input type="number" id="count" placeholder="请输入许可证数量" value="1" min="1">
+        </div>
+        
+        <button onclick="generateLicense()">生成许可证</button>
+        
+        <div id="result" class="result">
+            <p><strong>成功!</strong></p>
+            <p>许可证文件已生成: <span id="filename">Custom.mxtpro</span></p>
+            <p>请点击下方按钮下载许可证文件:</p>
+            <button id="downloadBtn" onclick="downloadLicense()">下载许可证文件</button>
+            <p>请将生成的文件移动或复制到MobaXterm的安装路径。</p>
+        </div>
+
+        <div class="code-block">
+/*
+源作者: Double Sine
+许可证: GPLv3
+*/
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>脚本原作者: Double Sine | 许可证: GPLv3</p>
+    </div>
+
+    <script>
+        // Base64相关函数
+        const VariantBase64Table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+        const VariantBase64Dict = {};
+        const VariantBase64ReverseDict = {};
+        
+        // 初始化字典
+        for (let i = 0; i < VariantBase64Table.length; i++) {
+            VariantBase64Dict[i] = VariantBase64Table[i];
+            VariantBase64ReverseDict[VariantBase64Table[i]] = i;
+        }
+
+        // 变种Base64编码
+        function VariantBase64Encode(bytes) {
+            let result = '';
+            const blocksCount = Math.floor(bytes.length / 3);
+            const leftBytes = bytes.length % 3;
+
+            for (let i = 0; i < blocksCount; i++) {
+                const codingInt = bytes[3 * i] | (bytes[3 * i + 1] << 8) | (bytes[3 * i + 2] << 16);
+                let block = VariantBase64Dict[codingInt & 0x3f];
+                block += VariantBase64Dict[(codingInt >> 6) & 0x3f];
+                block += VariantBase64Dict[(codingInt >> 12) & 0x3f];
+                block += VariantBase64Dict[(codingInt >> 18) & 0x3f];
+                result += block;
+            }
+
+            if (leftBytes === 0) {
+                return result;
+            } else if (leftBytes === 1) {
+                const codingInt = bytes[3 * blocksCount];
+                let block = VariantBase64Dict[codingInt & 0x3f];
+                block += VariantBase64Dict[(codingInt >> 6) & 0x3f];
+                result += block;
+                return result;
+            } else {
+                const codingInt = bytes[3 * blocksCount] | (bytes[3 * blocksCount + 1] << 8);
+                let block = VariantBase64Dict[codingInt & 0x3f];
+                block += VariantBase64Dict[(codingInt >> 6) & 0x3f];
+                block += VariantBase64Dict[(codingInt >> 12) & 0x3f];
+                result += block;
+                return result;
+            }
+        }
+
+        // 加密字节
+        function EncryptBytes(key, bytes) {
+            const result = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) {
+                result[i] = bytes[i] ^ ((key >> 8) & 0xff);
+                key = result[i] & key | 0x482D;
+            }
+            return result;
+        }
+
+        // 字符串转字节数组
+        function stringToBytes(str) {
+            const bytes = new Uint8Array(str.length);
+            for (let i = 0; i < str.length; i++) {
+                bytes[i] = str.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        // 生成许可证
+        function generateLicenseData(userName, majorVersion, minorVersion, count) {
+            const type = 1; // 专业版
+            
+            const licenseString = `${type}#${userName}|${majorVersion}${minorVersion}#${count}#${majorVersion}3${minorVersion}6${minorVersion}#0#0#0#`;
+            const licenseBytes = stringToBytes(licenseString);
+            const encryptedBytes = EncryptBytes(0x787, licenseBytes);
+            const encodedLicense = VariantBase64Encode(encryptedBytes);
+            
+            return encodedLicense;
+        }
+
+        // 创建ZIP文件
+        function createZipFile(content) {
+            // 使用JSZip库创建ZIP文件
+            return new Promise((resolve, reject) => {
+                if (typeof JSZip === 'undefined') {
+                    // 如果JSZip未加载，动态加载JSZip库
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                    script.onload = () => {
+                        const zip = new JSZip();
+                        zip.file('Pro.key', content);
+                        zip.generateAsync({type: 'blob'}).then(resolve).catch(reject);
+                    };
+                    script.onerror = () => {
+                        reject(new Error('无法加载JSZip库'));
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    // JSZip已加载
+                    const zip = new JSZip();
+                    zip.file('Pro.key', content);
+                    zip.generateAsync({type: 'blob'}).then(resolve).catch(reject);
+                }
+            });
+        }
+
+        // 生成许可证文件
+        async function generateLicense() {
+            const userName = document.getElementById('username').value.trim();
+            const versionInput = document.getElementById('version').value.trim();
+            const countInput = document.getElementById('count').value.trim();
+            
+            if (!userName || !versionInput) {
+                alert('请输入用户名和版本号');
+                return;
+            }
+            
+            const versionParts = versionInput.split('.');
+            if (versionParts.length < 2) {
+                alert('请输入有效的版本号，例如: 10.9');
+                return;
+            }
+            
+            const majorVersion = parseInt(versionParts[0]);
+            const minorVersion = parseInt(versionParts[1]);
+            const count = parseInt(countInput) || 1;
+            
+            if (isNaN(majorVersion) || isNaN(minorVersion)) {
+                alert('版本号必须是数字');
+                return;
+            }
+            
+            if (count < 1) {
+                alert('许可证数量必须大于0');
+                return;
+            }
+            
+            // 加载JSZip库（如果尚未加载）
+            if (typeof JSZip === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                document.head.appendChild(script);
+                
+                // 等待JSZip加载完成
+                await new Promise((resolve) => {
+                    script.onload = resolve;
+                    script.onerror = () => {
+                        alert('无法加载JSZip库');
+                        resolve();
+                    };
+                });
+            }
+            
+            try {
+                // 生成许可证内容
+                const licenseContent = generateLicenseData(userName, majorVersion, minorVersion, count);
+                
+                // 创建ZIP文件并保存为Blob对象
+                window.licenseBlob = await createZipFile(licenseContent);
+                
+                // 显示结果
+                document.getElementById('result').style.display = 'block';
+            } catch (error) {
+                alert('生成许可证时出错: ' + error.message);
+            }
+        }
+
+        // 下载许可证文件
+        function downloadLicense() {
+            if (!window.licenseBlob) {
+                alert('请先生成许可证');
+                return;
+            }
+            
+            const url = URL.createObjectURL(window.licenseBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Custom.mxtpro';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+    <!-- 加载JSZip库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html> 
